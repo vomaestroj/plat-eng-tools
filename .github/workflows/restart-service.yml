@@ -21,7 +21,6 @@ jobs:
           clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
           operation: PATCH_RUN
           runId: ${{ fromJson(inputs.port_context).runId }}
-          status: "IN_PROGRESS"
           logMessage: "Restarting ${{ inputs.service_name }}..."
 
       - name: Simulate K8s Restart
