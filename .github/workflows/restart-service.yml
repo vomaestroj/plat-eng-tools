@@ -1,0 +1,41 @@
+name: Restart K8s Service
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_name:
+        description: "K8s deployment name to restart"
+        required: true
+      port_context:
+        description: "Port context"
+        required: true
+
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Port - In Progress
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: "IN_PROGRESS"
+          logMessage: "Restarting ${{ inputs.service_name }}..."
+
+      - name: Simulate K8s Restart
+        run: |
+          echo "🔄 Running: kubectl rollout restart deployment/${{ inputs.service_name }}"
+          sleep 3
+          echo "✅ Restart complete"
+
+      - name: Notify Port - Success
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: "SUCCESS"
+          logMessage: "✅ ${{ inputs.service_name }} restarted successfully"
