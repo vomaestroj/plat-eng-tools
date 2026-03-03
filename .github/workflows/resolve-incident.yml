@@ -6,10 +6,6 @@ on:
       incident_id:
         description: "FireHydrant Incident ID to resolve"
         required: true
-      resolution_message:
-        description: "Resolution summary"
-        required: true
-        default: "Incident resolved via Port self-service action"
       port_context:
         description: "Port context"
         required: true
@@ -25,26 +21,16 @@ jobs:
           clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
           operation: PATCH_RUN
           runId: ${{ fromJson(inputs.port_context).runId }}
-          logMessage: "Resolving FireHydrant incident ${{ inputs.incident_id }}..."
+          logMessage: "Resolving incident ${{ inputs.incident_id }}..."
 
       - name: Resolve Incident in FireHydrant
         run: |
           echo "Resolving FireHydrant incident: ${{ inputs.incident_id }}"
           curl -X PATCH \
-            "https://api.firehydrant.io/v1/incidents/${{ inputs.incident_id }}" \
+            "https://api.firehydrant.io/v1/incidents/${{ inputs.incident_id }}/resolve" \
             -H "Authorization: Bearer ${{ secrets.FIREHYDRANT_API_KEY }}" \
             -H "Content-Type: application/json" \
-            -d '{"current_milestone": "resolved"
-            }'
-      - name: Post Resolution Note
-        run: |
-          curl --request POST \
-            --url "https://api.firehydrant.io/v1/incidents/${{ inputs.incident_id }}/notes" \
-            --header "Authorization: Bearer ${{ secrets.FIREHYDRANT_API_TOKEN }}" \
-            --header "Content-Type: application/json" \
-            --data '{
-              "body": "${{ inputs.resolution_message }}"
-            }'
+            -d '{"reason": "Resolved via Port self-service action"}'
 
       - name: Notify Port - Success
         uses: port-labs/port-github-action@v1
