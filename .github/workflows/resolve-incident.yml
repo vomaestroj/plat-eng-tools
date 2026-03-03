@@ -1,0 +1,58 @@
+name: Resolve FireHydrant Incident
+
+on:
+  workflow_dispatch:
+    inputs:
+      incident_id:
+        description: "FireHydrant Incident ID to resolve"
+        required: true
+      resolution_message:
+        description: "Resolution summary"
+        required: true
+        default: "Incident resolved via Port self-service action"
+      port_context:
+        description: "Port context"
+        required: true
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Port - In Progress
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          logMessage: "Resolving FireHydrant incident ${{ inputs.incident_id }}..."
+
+      - name: Resolve Incident in FireHydrant
+        run: |
+          curl --request PATCH \
+            --url "https://api.firehydrant.io/v1/incidents/${{ inputs.incident_id }}" \
+            --header "Authorization: Bearer ${{ secrets.FIREHYDRANT_API_TOKEN }}" \
+            --header "Content-Type: application/json" \
+            --data '{
+              "current_milestone": "resolved"
+            }'
+
+      - name: Post Resolution Note
+        run: |
+          curl --request POST \
+            --url "https://api.firehydrant.io/v1/incidents/${{ inputs.incident_id }}/notes" \
+            --header "Authorization: Bearer ${{ secrets.FIREHYDRANT_API_TOKEN }}" \
+            --header "Content-Type: application/json" \
+            --data '{
+              "body": "${{ inputs.resolution_message }}"
+            }'
+
+      - name: Notify Port - Success
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          operation: PATCH_RUN
+          runId: ${{ fromJson(inputs.port_context).runId }}
+          status: "SUCCESS"
+          logMessage: "✅ Incident ${{ inputs.incident_id }} resolved successfully"
