@@ -29,14 +29,13 @@ jobs:
 
       - name: Resolve Incident in FireHydrant
         run: |
-          curl --request PATCH \
-            --url "https://api.firehydrant.io/v1/incidents/${{ inputs.incident_id }}" \
-            --header "Authorization: Bearer ${{ secrets.FIREHYDRANT_API_TOKEN }}" \
-            --header "Content-Type: application/json" \
-            --data '{
-              "current_milestone": "resolved"
+          echo "Resolving FireHydrant incident: ${{ inputs.incident_id }}"
+          curl -X PATCH \
+            "https://api.firehydrant.io/v1/incidents/${{ inputs.incident_id }}" \
+            -H "Authorization: Bearer ${{ secrets.FIREHYDRANT_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"current_milestone": "resolved"
             }'
-
       - name: Post Resolution Note
         run: |
           curl --request POST \
